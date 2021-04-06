@@ -12,6 +12,7 @@ setup(
         description = __description__,
         scripts = [
             'bin/gen_wfs.py',
+            'bin/train_model.py'
             ],
         packages = [
             'waveform_NN',
