@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 import h5py
 from waveform_NN.normalization import Normalizer
 import glob 
@@ -23,6 +23,9 @@ args = parser.parse_args()
 nlayers = len(args.neurons_per_layer)
 
 data_file_names = glob.glob(f'{args.data_path}/*.h5')
+from pathlib import Path
+Path(args.outdir).mkdir(parents=True,exist_ok=True)
+
 history_amps,history_phases = [], [] # collect training histories
 for i,data_file_name in enumerate(data_file_names):
 
@@ -47,6 +50,8 @@ for i,data_file_name in enumerate(data_file_names):
     #normalize using just the first data set 
     if i==0:
         normalizer = Normalizer(Ytrain)
+        with open(f'{args.outdir}/normalizer.pkl','wb') as n:
+            pickle.dump(normalizer,n)
     Ytrain = normalizer.whiten(Ytrain)
     
     if i==0:
@@ -56,6 +61,9 @@ for i,data_file_name in enumerate(data_file_names):
         for i in range(nlayers):
             model_phase.add(Dense(args.neurons_per_layer[i],activation=args.activations[i]))
             model_amp.add(Dense(args.neurons_per_layer[i],activation=args.activations[i]))
+        
+        #model_amp.add(Dropout(0.2))
+        #model_phase.add(Dropout(0.2))
         model_amp.add(Dense(nfeatures//2, activation='linear'))
         model_phase.add(Dense(nfeatures//2, activation='linear'))
         model_phase.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
@@ -68,12 +76,12 @@ for i,data_file_name in enumerate(data_file_names):
     history_phase = model_phase.fit(Xtrain,Ytrain_phase,epochs=args.n_epochs,batch_size=args.batch_size)
     history_amps.append(history_amp.history)
     history_phases.append(history_phase.history)
+    
+    # checkpoint 
+    model_amp.save(f'{args.outdir}/model_amp')
+    model_phase.save(f'{args.outdir}/model_phase')
+    with open(f'{args.outdir}/history_amp.pkl','wb') as f:
+        pickle.dump(history_amps,f)
+    with open(f'{args.outdir}/history_phase.pkl','wb') as f:
+        pickle.dump(history_phases,f)
 
-from pathlib import Path
-Path(args.outdir).mkdir(parents=True,exist_ok=True)
-model_amp.save(f'{args.outdir}/model_amp.h5')
-model_phase.save(f'{args.outdir}/model_phase.h5')
-with open(f'{args.outdir}/history_amp.pkl','wb') as f:
-    pickle.dump(history_amps,f)
-with open(f'{args.outdir}/history_phase.pkl','wb') as f:
-    pickle.dump(history_phases,f)
