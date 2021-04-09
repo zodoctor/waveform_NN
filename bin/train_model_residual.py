@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
+from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 import h5py
@@ -55,22 +56,22 @@ for i,data_file_name in enumerate(data_file_names):
         normalizer = Normalizer(Ytrain)
         with open(f'{args.outdir}/normalizer.pkl','wb') as n:
             pickle.dump(normalizer,n)
-    Ytrain = normalizer.whiten(Ytrain)
-    
-    if i==0:
-        model_phase = Sequential()
-        model_amp = Sequential()
-
-        for j in range(nlayers):
-            model_phase.add(Dense(args.neurons_per_layer[j],activation=args.activations[j]))
-            model_amp.add(Dense(args.neurons_per_layer[j],activation=args.activations[j]))
         
-        #model_amp.add(Dropout(0.2))
-        #model_phase.add(Dropout(0.2))
-        model_amp.add(Dense(nfeatures//2, activation='linear'))
-        model_phase.add(Dense(nfeatures//2, activation='linear'))
-        model_phase.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
+        amp_inputs = keras.Input(shape=(Xtrain.shape[1],))
+        amp_block = residual_block(amp_inputs,[2000,2000])
+        amp_block = Dense(nfeatures//2, activation='linear')(amp_block)
+        model_amp = keras.Model(inputs=amp_inputs,outputs=amp_block)
         model_amp.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
+        keras.utils.plot_model(model_amp,f'{args.outdir}/model_amp.png')    
+
+        phase_inputs = keras.Input(shape=(Xtrain.shape[1],))
+        phase_block = residual_block(phase_inputs,[2000,2000])
+        phase_block = Dense(nfeatures//2, activation='linear')(phase_block)
+        model_phase = keras.Model(inputs=phase_inputs,outputs=phase_block)
+        model_phase.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
+        keras.utils.plot_model(model_phase,f'{args.outdir}/model_phase.png') 
+    
+    Ytrain = normalizer.whiten(Ytrain)
 
     Ytrain_amp = Ytrain[:,:nfeatures//2]
     Ytrain_phase = Ytrain[:,nfeatures//2:]

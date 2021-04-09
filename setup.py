@@ -22,7 +22,8 @@ setup(
             'waveform_NN.generate',
             'waveform_NN.benchmarking',
             'waveform_NN.normalization',
+            'waveform_NN.networks',
             ],
         data_files = [],
-        install_requires = ['tensorflow','keras','numpy','pycbc','matplotlib','scipy','h5py'],
+        install_requires = ['tensorflow','keras','numpy','pycbc','matplotlib','scipy','h5py','pydot'],
 )
