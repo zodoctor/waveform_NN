@@ -20,7 +20,7 @@ parser.add_argument("--neurons_per_layer",nargs='*',type=int,default=[])
 parser.add_argument("--activations",nargs='*',type=str,default=[])
 parser.add_argument("--batch_size",default=32,type=int)
 parser.add_argument("--loadmodel",default=False,action='store_true')
-parser.add_argument("--use_residual_block",default=False,action='store_true')
+parser.add_argument("--architecture",default='residual',dype=str)
 args = parser.parse_args()
 
 nlayers = len(args.neurons_per_layer)
@@ -56,20 +56,21 @@ for i,data_file_name in enumerate(data_file_names):
         normalizer = Normalizer(Ytrain)
         with open(f'{args.outdir}/normalizer.pkl','wb') as n:
             pickle.dump(normalizer,n)
-        
-        amp_inputs = keras.Input(shape=(Xtrain.shape[1],))
-        amp_block = residual_block(amp_inputs,[2000,2000])
-        amp_block = Dense(nfeatures//2, activation='linear')(amp_block)
-        model_amp = keras.Model(inputs=amp_inputs,outputs=amp_block)
-        model_amp.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
-        keras.utils.plot_model(model_amp,f'{args.outdir}/model_amp.png')    
+       
+        if args.architecture=='residual': 
+            amp_inputs = keras.Input(shape=(Xtrain.shape[1],))
+            amp_block = residual_block(amp_inputs,[2000,2000])
+            amp_block = Dense(nfeatures//2, activation='linear')(amp_block)
+            model_amp = keras.Model(inputs=amp_inputs,outputs=amp_block)
+            model_amp.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
+            keras.utils.plot_model(model_amp,f'{args.outdir}/model_amp.png')    
 
-        phase_inputs = keras.Input(shape=(Xtrain.shape[1],))
-        phase_block = residual_block(phase_inputs,[2000,2000])
-        phase_block = Dense(nfeatures//2, activation='linear')(phase_block)
-        model_phase = keras.Model(inputs=phase_inputs,outputs=phase_block)
-        model_phase.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
-        keras.utils.plot_model(model_phase,f'{args.outdir}/model_phase.png') 
+            phase_inputs = keras.Input(shape=(Xtrain.shape[1],))
+            phase_block = residual_block(phase_inputs,[2000,2000])
+            phase_block = Dense(nfeatures//2, activation='linear')(phase_block)
+            model_phase = keras.Model(inputs=phase_inputs,outputs=phase_block)
+            model_phase.compile(loss="mean_squared_error", optimizer='adam',metrics=["mean_squared_error"])
+            keras.utils.plot_model(model_phase,f'{args.outdir}/model_phase.png') 
     
     Ytrain = normalizer.whiten(Ytrain)
 

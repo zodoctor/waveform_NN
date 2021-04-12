@@ -8,5 +8,15 @@ def residual_block(X,n_neurons=[256, 500]):
     for i in range(len(n_neurons)):
         X = layers.Dense(n_neurons[i])(X)
         X = layers.LeakyReLU()(X)
-    X = keras.layers.Concatenate()([X,X_shortcut])
+    X = layers.Concatenate()([X,X_shortcut])
     return X
+
+def identity_block(X):
+    X_shortcut = X
+    X = layers.Conv2D(1,kernel_size=(4,20),padding='same')(X)
+    X = layers.LeakyReLU()(X)
+    X = layers.Conv2D(1,kernel_size=(4,20),padding='same')(X)
+    X = layers.Add()([X,X_shortcut])
+    X = layers.LeakyReLU()(X)
+    return X
+    
