@@ -9,5 +9,5 @@
 
 module load anaconda3
 conda activate wfenv
-./train_model_conv.py model_conv wf_data 50 --neurons_per_layer 2000 2000 --activations relu relu --batch_size 256 
+./train_model_conv.py model_conv wf_data 50 --neurons_per_layer 2000 2000 --activations relu relu --batch_size 512 
 #echo "I am Slurm job ${SLURM_JOB_ID}, array job ${SLURM_ARRAY_JOB_ID}, and array task ${SLURM_ARRAY_TASK_ID}."

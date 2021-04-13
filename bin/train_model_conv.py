@@ -57,19 +57,28 @@ for i,data_file_name in enumerate(data_file_names):
         normalizer = Normalizer(Ytrain)
         with open(f'{args.outdir}/normalizer.pkl','wb') as n:
             pickle.dump(normalizer,n)
-        mm_loss = MismatchLoss(normalizer,freqs=np.logspace(np.log10(10.),np.log10(1000.),500)) 
-        inputs = keras.Input(shape=(Xtrain.shape[1],))
-        model_block = Dense(nfeatures)(inputs)
-        model_block = LeakyReLU()(X)
-        model_block = layers.Reshape((4,nfreqs))(model_block)
-        model_block = identity_block(model_block)
-        model_block = layers.Reshape(-1)(model_block)
-        model_block = Dense(nfeatures)(model_block)
-        model = keras.Model(inputs=inputs,outputs=model_block)
-        model.compile(loss=mm_loss,optimizer='adam')
-        keras.utils.plot_model(model,f'{args.outdir}/model.png') 
-    
-        
+        mm_loss = MismatchLoss(normalizer,freqs=np.logspace(np.log10(10.),np.log10(1000.),500),approx=True).__call__ 
+        if args.architecture == 'conv':
+            inputs = keras.Input(shape=(Xtrain.shape[1],))
+            model_block = Dense(nfeatures)(inputs)
+            model_block = LeakyReLU()(model_block)
+            model_block = keras.layers.Reshape((4,nfreqs,1))(model_block)
+            print('model block post first reshape',model_block.shape)
+            model_block = identity_block(model_block)
+            print('model block post identity',model_block.shape)
+            model_block = keras.layers.Reshape((nfeatures,))(model_block)
+            print('model block post re-reshape',model_block.shape)
+            model_block = Dense(nfeatures)(model_block)
+            print('model block post final dense',model_block.shape)
+            model = keras.Model(inputs=inputs,outputs=model_block)
+            model.compile(loss=mm_loss,optimizer='adam')
+            keras.utils.plot_model(model,f'{args.outdir}/model.png') 
+        else:
+            model = Sequential()
+            model.add(Dense(4000,activation='relu'))
+            model.add(Dense(2000,activation='linear')) 
+            model.compile(loss=mm_loss,optimizer='adam')
+            keras.utils.plot_model(model,f'{args.outdir}/model.png')
 
     Ytrain = normalizer.whiten(Ytrain)
     history = model.fit(Xtrain,Ytrain,epochs=args.n_epochs,batch_size=args.batch_size,validation_split=0.1)

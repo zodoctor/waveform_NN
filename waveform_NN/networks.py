@@ -13,6 +13,7 @@ def residual_block(X,n_neurons=[256, 500]):
 
 def identity_block(X):
     X_shortcut = X
+    print('xshape',X.shape)
     X = layers.Conv2D(1,kernel_size=(4,20),padding='same')(X)
     X = layers.LeakyReLU()(X)
     X = layers.Conv2D(1,kernel_size=(4,20),padding='same')(X)
